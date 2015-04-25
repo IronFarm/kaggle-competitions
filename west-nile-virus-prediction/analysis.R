@@ -1,6 +1,6 @@
 source("loadData.R")
 source("trainNN.R")
-#source("utility.R")
+source("utility.R")
 
 splitSample <- function(X, y, split = 0.8) {
   mTot <- nrow(X)
@@ -22,6 +22,10 @@ splitSample <- function(X, y, split = 0.8) {
 
 getCost <- function(X, y, theta1, theta2) {
   m <- nrow(X)
+  
+  # Add bias node
+  X <- cbind(rep(1, m),
+             X)
   
   z2 <- X %*% t(theta1)
   a2 <- cbind(rep(1, m),
@@ -53,8 +57,32 @@ mTrain <- nrow(XTrain)
 mCv <- nrow(XCv)
 nVar <- ncol(XTrain)
 
-res <- trainNN(XTrain, yTrain)
-theta1 <- res[[1]]; theta2 <- res[[2]];
+res <- trainNN(XTrain,
+               yTrain)
+theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]]
+
+# Make learning curves, using 200-8000 training examples
+# Data is already randomised
+learningCurve <- matrix(nrow = 40, ncol = 3)
+for (i in 1:40) {
+  trainingExamples <- 200 * i
+  
+  res <- trainNN(XTrain[1:trainingExamples, ],
+                 yTrain[1:trainingExamples])
+  theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]];
+  
+  costTrain <- getCost(XTrain[1:trainingExamples, ],
+                       yTrain[1:trainingExamples],
+                       theta1,
+                       theta2)
+  costCv <- getCost(XCv,
+                    yCv,
+                    theta1,
+                    theta2)
+  
+  learningCurve[i, ] <- c(trainingExamples, costTrain, costCv)
+  print(learningCurve[i, ])
+}
 
 # # Find threshold which maximises F1 score (shouldn't be done on training data though!)
 # nThresholds <- 1000
