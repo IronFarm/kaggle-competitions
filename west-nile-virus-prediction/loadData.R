@@ -39,7 +39,7 @@ loadData <- function() {
   weatherData <- loadWeatherData()
   
   # Merge in weather data from station 1 (Chicago O'Hare)
-  input <- merge(data,
+  input <- merge(input,
                  weatherData[weatherData$Station == 1, ],
                  all.x = TRUE)
   
