@@ -1,6 +1,6 @@
 source("utility.R")
 
-trainNN <- function(X, y, lambda = 0.1, nIter = 500) {
+trainNN <- function(X, y, lambda = 0.1, nIter = 100) {
   m <- nrow(X)
   nVar <- ncol(X)
   

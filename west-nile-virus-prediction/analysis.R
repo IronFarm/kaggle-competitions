@@ -37,7 +37,7 @@ getCost <- function(X, y, theta1, theta2) {
   
   J <- sum(-y * log(hyp) - (1 - y) * log(1 - hyp)) / m
   
-  return(J)
+  return(c(J, hyp))
 }
 
 calculateLearningCurve <- function(XTrain, yTrain, XCv, yCv) {
@@ -54,11 +54,11 @@ calculateLearningCurve <- function(XTrain, yTrain, XCv, yCv) {
     costTrain <- getCost(XTrain[1:trainingExamples, ],
                          yTrain[1:trainingExamples],
                          theta1,
-                         theta2)
+                         theta2)[1]
     costCv <- getCost(XCv,
                       yCv,
                       theta1,
-                      theta2)
+                      theta2)[1]
     
     learningCurve[i, ] <- c(trainingExamples, costTrain, costCv)
     print(learningCurve[i, ])
@@ -69,10 +69,14 @@ calculateLearningCurve <- function(XTrain, yTrain, XCv, yCv) {
 
 input <- loadData()
 
-# X variables are day of year, lat. and long.
+# Copy variables used to train NN
 X <- cbind(input$DayOfYear,
            input$Latitude,
-           input$Longitude)
+           input$Longitude,
+           input$Tmin,
+           input$Tmax,
+           input$Tavg,
+           input$PrecipTotal)
 
 # y contains 0 for no WNV and 1 for WNV present
 y <- matrix(input$WnvPresent)
@@ -86,29 +90,34 @@ nVar <- ncol(XTrain)
 
 res <- trainNN(XTrain,
                yTrain)
-theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]]
+theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]];
 
 # learningCurve <- calculateLearningCurve(XTrain,
 #                                         yTrain,
 #                                         XCv,
 #                                         yCv)
 
-# # Find threshold which maximises F1 score (shouldn't be done on training data though!)
-# nThresholds <- 1000
-# f1Hist <- matrix(nrow = nThresholds, ncol = 2)
-# for (i in 1:nThresholds) {
-#   threshold <- i/nThresholds
-#   
-#   decision <- hyp > threshold
-#   
-#   tp <- sum(decision == 1 & y == 1)
-#   fp <- sum(decision == 1 & y == 0)
-#   fn <- sum(decision == 0 & y == 1)
-#   tn <- sum(decision == 0 & y == 0)
-#   
-#   precision <- tp/(tp + fp)
-#   recall <- tp/(tp + fn)
-#   
-#   f1 <- 2 * precision * recall/(precision + recall)
-#   f1Hist[i, ] <- c(i, f1)
-# }
+# Find threshold which maximises F1 score
+nThresholds <- 1000
+f1Hist <- matrix(nrow = nThresholds, ncol = 2)
+for (i in 1:nThresholds) {
+  threshold <- i / nThresholds
+  
+  hyp <- getCost(XCv,
+                 yCv,
+                 theta1,
+                 theta2)[2]
+  decision <- hyp > threshold
+  
+  tp <- sum(decision == 1 & yCv == 1)
+  fp <- sum(decision == 1 & yCv == 0)
+  fn <- sum(decision == 0 & yCv == 1)
+  tn <- sum(decision == 0 & yCv == 0)
+  
+  precision <- tp / (tp + fp)
+  recall <- tp / (tp + fn)
+  
+  f1 <- 2 * precision * recall / (precision + recall)
+  f1Hist[i, ] <- c(i, f1)
+}
+cat("Max. F1 score: ", max(f1Hist[, 2], na.rm = TRUE))
