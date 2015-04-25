@@ -67,7 +67,7 @@ calculateLearningCurve <- function(XTrain, yTrain, XCv, yCv) {
   return(learningCurve)
 }
 
-input <- loadData()
+input <- loadData("data/train.csv")
 
 # Copy variables used to train NN
 X <- cbind(input$DayOfYear,

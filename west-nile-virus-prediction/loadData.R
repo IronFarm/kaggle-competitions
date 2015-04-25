@@ -1,36 +1,24 @@
-meanNormalise <- function(X, col) {
-  data <- X[, col]
-  
+meanNormalise <- function(data) {
+
   data <- (data - mean(data))/sd(data)
-  
-  X[, col] <- data
-  return(X)
+
+  return(data)
 }
 
-loadData <- function() {
-  trainClasses = c("Date",
-                   "NULL",#character",
-                   "factor",
-                   "NULL",#"character",
-                   "NULL",#"character",
-                   "character",
-                   "NULL",#"character",
-                   "numeric",
-                   "numeric",
-                   "integer",
-                   "integer",
-                   "integer")
-  
+loadData <- function(filename) {
   # Read in CSV
-  input <- read.csv("data/train.csv",
-                    colClasses = trainClasses)
+  input <- read.csv(filename,
+                    stringsAsFactors = FALSE)
+  input <- transform(input,
+                     Date = as.Date(Date),
+                     Species = as.factor(Species))
   
   # Ignore satellite traps, whose trap names are ended with a letter
   input <- subset(input, nchar(Trap) == 4)
   
   # Perform mean normalisation
-  input <- meanNormalise(input, 4)
-  input <- meanNormalise(input, 5)
+  input$Latitude <- meanNormalise(input$Latitude)
+  input$Longitude <- meanNormalise(input$Longitude)
   
   # Save day of year (0-366)
   input$DayOfYear <- as.integer(format(input$Date, "%j"))
