@@ -5,6 +5,30 @@ meanNormalise <- function(data) {
   return(data)
 }
 
+movingAverage <- function(data, days = 7) {
+  # Do not use with days > 25!
+  output <- rep(0, length(data))
+  
+  for (i in days:length(data)) {
+    output[i] <- mean(data[(i - days):i],
+                      na.rm = TRUE)
+  }
+  
+  return(output)
+}
+
+slidingSum <- function(data, days = 7) {
+  # Do not use with days > 25!
+  output <- rep(0, length(data))
+  
+  for (i in days:length(data)) {
+    output[i] <- sum(data[(i - days):i],
+                     na.rm = TRUE)
+  }
+  
+  return(output)
+}
+
 loadData <- function(filename) {
   # Read in CSV
   input <- read.csv(filename,
@@ -22,13 +46,14 @@ loadData <- function(filename) {
   
   # Save day of year (0-366)
   input$DayOfYear <- as.integer(format(input$Date, "%j"))
+  input$MonthOfYear <- as.integer(format(input$Date, "%m"))
   
   # Load weather data
   weatherData <- loadWeatherData()
   
-  # Merge in weather data from station 1 (Chicago O'Hare)
+  # Merge in weather data
   input <- merge(input,
-                 weatherData[weatherData$Station == 1, ],
+                 weatherData,
                  all.x = TRUE)
   
   input <- na.omit(input)
@@ -44,6 +69,14 @@ loadWeatherData <- function() {
                            Station = as.factor(Station),
                            Date = as.Date(Date))
   
+  # Use Chicago O'Hare data only for now to simplify moving average calculation
+  weatherData <- subset(weatherData, Station == 1)
+  
+  # Add moving average for Tavg
+  weatherData$SevenDayMeanTavg <- movingAverage(weatherData$Tavg, 7)
+  # and sliding sum for PrecipTotal
+  weatherData$SevenDaySumPrecipTotal <- slidingSum(weatherData$PrecipTotal, 7)
+  
   # Reorder and save temp. and precip. data
-  weatherData <- weatherData[, c(2, 1, 4, 3, 5, 17)]
+  weatherData <- weatherData[, c(2, 1, 4, 3, 5, 17, 23, 24)]
 }

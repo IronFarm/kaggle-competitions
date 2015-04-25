@@ -125,12 +125,17 @@ input <- loadData("data/train.csv")
 
 # Copy variables used to train NN
 X <- cbind(input$DayOfYear,
+           input$MonthOfYear,
            input$Latitude,
            input$Longitude,
            input$Tmin,
            input$Tmax,
            input$Tavg,
-           input$PrecipTotal)
+           input$PrecipTotal,
+           input$SevenDayMeanTavg,
+           input$SevenDaySumPrecipTotal,
+           input$Block,
+           input$Species)
 
 # y contains 0 for no WNV and 1 for WNV present
 y <- matrix(input$WnvPresent)
@@ -151,9 +156,9 @@ theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]];
 #                                         XCv,
 #                                         yCv)
 
-# f1Hist <- calculateF1Score(XCv,
-#                            yCv,
-#                            theta1,
-#                            theta2)
+f1Hist <- calculateF1Score(XCv,
+                           yCv,
+                           theta1,
+                           theta2)
 
 # saveSubmissionFile(theta1, theta2)
