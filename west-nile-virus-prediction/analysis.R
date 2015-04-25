@@ -40,6 +40,33 @@ getCost <- function(X, y, theta1, theta2) {
   return(J)
 }
 
+calculateLearningCurve <- function(XTrain, yTrain, XCv, yCv) {
+  # Make learning curves, using 200-8000 training examples
+  # Data is already randomised
+  learningCurve <- matrix(nrow = 40, ncol = 3)
+  for (i in 1:40) {
+    trainingExamples <- 200 * i
+    
+    res <- trainNN(XTrain[1:trainingExamples, ],
+                   yTrain[1:trainingExamples])
+    theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]];
+    
+    costTrain <- getCost(XTrain[1:trainingExamples, ],
+                         yTrain[1:trainingExamples],
+                         theta1,
+                         theta2)
+    costCv <- getCost(XCv,
+                      yCv,
+                      theta1,
+                      theta2)
+    
+    learningCurve[i, ] <- c(trainingExamples, costTrain, costCv)
+    print(learningCurve[i, ])
+  }
+  
+  return(learningCurve)
+}
+
 input <- loadData()
 
 # X variables are day of year, lat. and long.
@@ -61,28 +88,10 @@ res <- trainNN(XTrain,
                yTrain)
 theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]]
 
-# Make learning curves, using 200-8000 training examples
-# Data is already randomised
-learningCurve <- matrix(nrow = 40, ncol = 3)
-for (i in 1:40) {
-  trainingExamples <- 200 * i
-  
-  res <- trainNN(XTrain[1:trainingExamples, ],
-                 yTrain[1:trainingExamples])
-  theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]];
-  
-  costTrain <- getCost(XTrain[1:trainingExamples, ],
-                       yTrain[1:trainingExamples],
-                       theta1,
-                       theta2)
-  costCv <- getCost(XCv,
-                    yCv,
-                    theta1,
-                    theta2)
-  
-  learningCurve[i, ] <- c(trainingExamples, costTrain, costCv)
-  print(learningCurve[i, ])
-}
+# learningCurve <- calculateLearningCurve(XTrain,
+#                                         yTrain,
+#                                         XCv,
+#                                         yCv)
 
 # # Find threshold which maximises F1 score (shouldn't be done on training data though!)
 # nThresholds <- 1000
