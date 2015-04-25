@@ -1,3 +1,12 @@
+meanNormalise <- function(X, col) {
+  data <- X[, col]
+  
+  data <- (data - mean(data))/sd(data)
+  
+  X[, col] <- data
+  return(X)
+}
+
 loadData <- function() {
   trainClasses = c("Date",
                    "NULL",#character",
@@ -21,6 +30,10 @@ loadData <- function() {
   
   # Save WNV presence as a bool
   #input$WnvPresent <- as.logical(input$WnvPresent)
+  
+  # Perform mean normalisation
+  input <- meanNormalise(input, 4)
+  input <- meanNormalise(input, 5)
   
   # Save day of year (0-366)
   input$DayOfYear <- as.integer(format(input$Date, "%j"))
