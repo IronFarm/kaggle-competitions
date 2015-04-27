@@ -79,13 +79,18 @@ calculateF1Score <- function(XCv, yCv, theta1, theta2, nThresholds = 100) {
 saveSubmissionFile <- function(theta1, theta2) {
   input <- loadData("data/test.csv")
   
-  X <- cbind(input$DayOfYear,
-             input$Latitude,
-             input$Longitude,
-             input$Tmin,
-             input$Tmax,
+  X <- cbind(#input$DayOfYear,
+             input$MonthOfYear,
+             #input$Latitude,
+             #input$Longitude,
+             #input$Tmin,
+             #input$Tmax,
              input$Tavg,
-             input$PrecipTotal)
+             input$PrecipTotal,
+             #input$SevenDayMeanTavg,
+             #input$SevenDaySumPrecipTotal,
+             input$Block,
+             input$Species)
   y <- rep(0, nrow(X))
   
   hyp <- getCost(X, y, theta1, theta2)[[2]]
@@ -104,16 +109,16 @@ saveSubmissionFile <- function(theta1, theta2) {
 input <- loadData("data/train.csv")
 
 # Copy variables used to train NN
-X <- cbind(input$DayOfYear,
+X <- cbind(#input$DayOfYear,
            input$MonthOfYear,
-           input$Latitude,
-           input$Longitude,
-           input$Tmin,
-           input$Tmax,
+           #input$Latitude,
+           #input$Longitude,
+           #input$Tmin,
+           #input$Tmax,
            input$Tavg,
            input$PrecipTotal,
-           input$SevenDayMeanTavg,
-           input$SevenDaySumPrecipTotal,
+           #input$SevenDayMeanTavg,
+           #input$SevenDaySumPrecipTotal,
            input$Block,
            input$Species)
 
@@ -128,7 +133,9 @@ mCv <- nrow(XCv)
 nVar <- ncol(XTrain)
 
 res <- trainNN(XTrain,
-               yTrain)
+               yTrain,
+               theta1 = theta1,
+               theta2 = theta2)
 theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]];
 
 # learningCurve <- calculateLearningCurve(XTrain,

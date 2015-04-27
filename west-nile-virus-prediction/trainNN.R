@@ -52,7 +52,7 @@ runGradientChecking <- function(X, y, theta1, theta2, epsilon = 0.001) {
   return(list(theta1Grad, theta2Grad))
 }
 
-trainNN <- function(X, y, lambda = 0.1, nIter = 100) {
+trainNN <- function(X, y, lambda = 5, nIter = 100, theta1 = NA, theta2 = NA) {
   m <- nrow(X)
   nVar <- ncol(X)
   
@@ -61,12 +61,16 @@ trainNN <- function(X, y, lambda = 0.1, nIter = 100) {
              X)
   
   # Randomly initialise weights
-  theta1 <- matrix(runif(nVar * (nVar + 1)) - 0.5,
-                   nrow = nVar,
-                   ncol = nVar + 1)
-  theta2 <- matrix(runif(nVar + 1) - 0.5,
-                   nrow = 1,
-                   ncol = nVar + 1)
+  if (is.na(theta1)) {
+    theta1 <- matrix(runif(nVar * (nVar + 1)) - 0.5,
+                     nrow = nVar,
+                     ncol = nVar + 1)
+  }
+  if (is.na(theta2)) {
+    theta2 <- matrix(runif(nVar + 1) - 0.5,
+                     nrow = 1,
+                     ncol = nVar + 1)
+  }
   
   # Gradient descent
   costHist <- matrix(nrow = nIter, ncol = 2)
@@ -83,6 +87,9 @@ trainNN <- function(X, y, lambda = 0.1, nIter = 100) {
     # Calculate and save cost
     J <- sum(-y * log(hyp) - (1 - y) * log(1 - hyp)) / m
     costHist[i, ] <- c(i, J)
+    if (i %% 10 == 0) {
+      cat("i = ", i, "\tJ = ", J, "\n")
+    }
     
     # Backpropagation
     delta3 <- hyp - y
@@ -95,13 +102,13 @@ trainNN <- function(X, y, lambda = 0.1, nIter = 100) {
     theta1 <- theta1 - grad1 * lambda
     theta2 <- theta2 - grad2 * lambda
   
-    gradCheck <- runGradientChecking(X[, 2:ncol(X)],
-                                     y,
-                                     theta1,
-                                     theta2)
+    # gradCheck <- runGradientChecking(X[, 2:ncol(X)],
+    #                                  y,
+    #                                  theta1,
+    #                                  theta2)
   
-    print(grad1); print(gradCheck[[1]]);
-    print(grad2); print(gradCheck[[2]]);
+    # print(grad1); print(gradCheck[[1]]);
+    # print(grad2); print(gradCheck[[2]]);
   }
   
   return(list(theta1, theta2, costHist))

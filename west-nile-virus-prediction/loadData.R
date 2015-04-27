@@ -40,10 +40,6 @@ loadData <- function(filename) {
   # Ignore satellite traps, whose trap names are ended with a letter
   input <- subset(input, nchar(Trap) == 4)
   
-  # Perform mean normalisation
-  input$Latitude <- meanNormalise(input$Latitude)
-  input$Longitude <- meanNormalise(input$Longitude)
-  
   # Save day of year (0-366)
   input$DayOfYear <- as.integer(format(input$Date, "%j"))
   input$MonthOfYear <- as.integer(format(input$Date, "%m"))
@@ -55,9 +51,15 @@ loadData <- function(filename) {
   input <- merge(input,
                  weatherData,
                  all.x = TRUE)
-  
   input <- na.omit(input)
   
+  # Perform mean normalisation
+  input$Latitude <- meanNormalise(input$Latitude)
+  input$Longitude <- meanNormalise(input$Longitude)
+  input$MonthOfYear <- meanNormalise(input$MonthOfYear)
+  input$Tavg <- meanNormalise(input$Tavg)
+  input$Block <- meanNormalise(input$Block)
+
   return(input)
 }
 
