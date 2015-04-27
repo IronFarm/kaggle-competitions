@@ -1,5 +1,25 @@
 source("utility.R")
 
+getCost <- function(X, y, theta1, theta2) {
+  m <- nrow(X)
+  
+  # Add bias node
+  X <- cbind(rep(1, m),
+             X)
+  
+  z2 <- X %*% t(theta1)
+  a2 <- cbind(rep(1, m),
+              sigmoid(z2))
+  
+  # Calculate output layer
+  z3 <- a2 %*% t(theta2)
+  hyp <- sigmoid(z3)
+  
+  J <- sum(-y * log(hyp) - (1 - y) * log(1 - hyp)) / m
+  
+  return(list(J, hyp))
+}
+
 trainNN <- function(X, y, lambda = 0.1, nIter = 100) {
   m <- nrow(X)
   nVar <- ncol(X)

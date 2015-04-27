@@ -20,26 +20,6 @@ splitSample <- function(X, y, split = 0.8) {
   return(list(XTrain, yTrain, XCv, yCv))
 }
 
-getCost <- function(X, y, theta1, theta2) {
-  m <- nrow(X)
-  
-  # Add bias node
-  X <- cbind(rep(1, m),
-             X)
-  
-  z2 <- X %*% t(theta1)
-  a2 <- cbind(rep(1, m),
-              sigmoid(z2))
-  
-  # Calculate output layer
-  z3 <- a2 %*% t(theta2)
-  hyp <- sigmoid(z3)
-  
-  J <- sum(-y * log(hyp) - (1 - y) * log(1 - hyp)) / m
-  
-  return(list(J, hyp))
-}
-
 calculateLearningCurve <- function(XTrain, yTrain, XCv, yCv) {
   # Make learning curves, using 200-8000 training examples
   # Data is already randomised
@@ -160,5 +140,7 @@ f1Hist <- calculateF1Score(XCv,
                            yCv,
                            theta1,
                            theta2)
+
+hyp <- getCost(XTrain, yTrain, theta1, theta2)[[2]]
 
 # saveSubmissionFile(theta1, theta2)
