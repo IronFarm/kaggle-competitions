@@ -79,18 +79,19 @@ calculateF1Score <- function(XCv, yCv, theta1, theta2, nThresholds = 100) {
 saveSubmissionFile <- function(theta1, theta2) {
   input <- loadData("data/test.csv")
   
-  X <- cbind(#input$DayOfYear,
-             input$MonthOfYear,
-             #input$Latitude,
-             #input$Longitude,
-             #input$Tmin,
-             #input$Tmax,
+  X <- cbind(input$DayOfYear,
+             #input$MonthOfYear,
+             input$Latitude,
+             input$Longitude,
+             input$Tmin,
+             input$Tmax,
              input$Tavg,
              input$PrecipTotal,
-             #input$SevenDayMeanTavg,
-             #input$SevenDaySumPrecipTotal,
-             input$Block,
+             input$SevenDayMeanTavg,
+             input$SevenDaySumPrecipTotal,
+             #input$Block,
              input$Species)
+
   y <- rep(0, nrow(X))
   
   hyp <- getCost(X, y, theta1, theta2)[[2]]
@@ -109,17 +110,17 @@ saveSubmissionFile <- function(theta1, theta2) {
 input <- loadData("data/train.csv")
 
 # Copy variables used to train NN
-X <- cbind(#input$DayOfYear,
-           input$MonthOfYear,
-           #input$Latitude,
-           #input$Longitude,
-           #input$Tmin,
-           #input$Tmax,
+X <- cbind(input$DayOfYear,
+           #input$MonthOfYear,
+           input$Latitude,
+           input$Longitude,
+           input$Tmin,
+           input$Tmax,
            input$Tavg,
            input$PrecipTotal,
-           #input$SevenDayMeanTavg,
-           #input$SevenDaySumPrecipTotal,
-           input$Block,
+           input$SevenDayMeanTavg,
+           input$SevenDaySumPrecipTotal,
+           #input$Block,
            input$Species)
 
 # y contains 0 for no WNV and 1 for WNV present
@@ -151,3 +152,4 @@ f1Hist <- calculateF1Score(XCv,
 hyp <- getCost(XTrain, yTrain, theta1, theta2)[[2]]
 
 # saveSubmissionFile(theta1, theta2)
+

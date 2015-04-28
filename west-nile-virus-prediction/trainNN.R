@@ -1,6 +1,6 @@
 source("utility.R")
 
-getCost <- function(X, y, theta1, theta2) {
+getCost <- function(X, y, theta1, theta2, lambda = 0) {
   m <- nrow(X)
   
   # Add bias node
@@ -16,6 +16,7 @@ getCost <- function(X, y, theta1, theta2) {
   hyp <- sigmoid(z3)
   
   J <- sum(-y * log(hyp) - (1 - y) * log(1 - hyp)) / m
+  J <- J + (lambda / (2 * m)) * (sum(theta1^2) + sum(theta2^2))
   
   return(list(J, hyp))
 }
@@ -52,7 +53,7 @@ runGradientChecking <- function(X, y, theta1, theta2, epsilon = 0.001) {
   return(list(theta1Grad, theta2Grad))
 }
 
-trainNN <- function(X, y, lambda = 5, nIter = 100, theta1 = NA, theta2 = NA) {
+trainNN <- function(X, y, learningRate = 5, nIter = 100, lambda = 0, theta1 = NA, theta2 = NA) {
   m <- nrow(X)
   nVar <- ncol(X)
   
@@ -60,7 +61,7 @@ trainNN <- function(X, y, lambda = 5, nIter = 100, theta1 = NA, theta2 = NA) {
   X <- cbind(rep(1, m),
              X)
   
-  # Randomly initialise weights
+  # Randomly initialise weights if not provided
   if (is.na(theta1)) {
     theta1 <- matrix(runif(nVar * (nVar + 1)) - 0.5,
                      nrow = nVar,
@@ -86,6 +87,7 @@ trainNN <- function(X, y, lambda = 5, nIter = 100, theta1 = NA, theta2 = NA) {
     
     # Calculate and save cost
     J <- sum(-y * log(hyp) - (1 - y) * log(1 - hyp)) / m
+    J <- J + (lambda / (2 * m)) * (sum(theta1^2) + sum(theta2^2))
     costHist[i, ] <- c(i, J)
     if (i %% 10 == 0) {
       cat("i = ", i, "\tJ = ", J, "\n")
@@ -98,9 +100,13 @@ trainNN <- function(X, y, lambda = 5, nIter = 100, theta1 = NA, theta2 = NA) {
     grad2 <- (t(delta3) %*% a2) / m
     grad1 <- (t(delta2) %*% X) / m
     
+    # Regularisation
+    grad2[, 2:ncol(grad2)] <- grad2[, 2:ncol(grad2)] + (lambda / m) * theta2[, 2:ncol(grad2)]
+    grad1[, 2:ncol(grad1)] <- grad1[, 2:ncol(grad1)] + (lambda / m) * theta1[, 2:ncol(grad1)]
+    
     # and gradient descent
-    theta1 <- theta1 - grad1 * lambda
-    theta2 <- theta2 - grad2 * lambda
+    theta1 <- theta1 - grad1 * learningRate
+    theta2 <- theta2 - grad2 * learningRate
   
     # gradCheck <- runGradientChecking(X[, 2:ncol(X)],
     #                                  y,

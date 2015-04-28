@@ -38,9 +38,9 @@ loadData <- function(filename) {
                      Species = as.factor(Species))
   
   # Ignore satellite traps, whose trap names are ended with a letter
-  input <- subset(input, nchar(Trap) == 4)
+  # input <- subset(input, nchar(Trap) == 4)
   
-  # Save day of year (0-366)
+  # Save day and month of year
   input$DayOfYear <- as.integer(format(input$Date, "%j"))
   input$MonthOfYear <- as.integer(format(input$Date, "%m"))
   
@@ -51,13 +51,17 @@ loadData <- function(filename) {
   input <- merge(input,
                  weatherData,
                  all.x = TRUE)
-  input <- na.omit(input)
+  #input <- na.omit(input)
   
-  # Perform mean normalisation
+  # Perform mean normalisation where required
   input$Latitude <- meanNormalise(input$Latitude)
   input$Longitude <- meanNormalise(input$Longitude)
+  input$DayOfYear <- meanNormalise(input$DayOfYear)
   input$MonthOfYear <- meanNormalise(input$MonthOfYear)
+  input$Tmin <- meanNormalise(input$Tmin)
+  input$Tmax <- meanNormalise(input$Tmax)
   input$Tavg <- meanNormalise(input$Tavg)
+  input$SevenDayMeanTavg <- meanNormalise(input$SevenDayMeanTavg)
   input$Block <- meanNormalise(input$Block)
 
   return(input)
@@ -78,7 +82,10 @@ loadWeatherData <- function() {
   weatherData$SevenDayMeanTavg <- movingAverage(weatherData$Tavg, 7)
   # and sliding sum for PrecipTotal
   weatherData$SevenDaySumPrecipTotal <- slidingSum(weatherData$PrecipTotal, 7)
-  
+
+  # Set NAs to zero
+  weatherData$PrecipTotal[is.na(weatherData$PrecipTotal)] <- 0
+
   # Reorder and save temp. and precip. data
   weatherData <- weatherData[, c(2, 1, 4, 3, 5, 17, 23, 24)]
 }
