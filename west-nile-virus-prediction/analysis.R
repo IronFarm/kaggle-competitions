@@ -29,7 +29,7 @@ calculateLearningCurve <- function(XTrain, yTrain, XCv, yCv) {
     
     res <- trainNN(XTrain[1:trainingExamples, ],
                    yTrain[1:trainingExamples])
-    theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]];
+    theta1 <- res[[1]]; theta2 <- res[[2]];
     
     costTrain <- getCost(XTrain[1:trainingExamples, ],
                          yTrain[1:trainingExamples],
@@ -56,7 +56,7 @@ calculateF1Score <- function(XCv, yCv, theta1, theta2, nThresholds = 100) {
     hyp <- getCost(XCv,
                    yCv,
                    theta1,
-                   theta2)[[2]]
+                   theta2)[[3]]
     decision <- hyp > threshold
     
     tp <- sum(decision == 1 & yCv == 1)
@@ -94,7 +94,7 @@ saveSubmissionFile <- function(theta1, theta2) {
 
   y <- rep(0, nrow(X))
   
-  hyp <- getCost(X, y, theta1, theta2)[[2]]
+  hyp <- getCost(X, y, theta1, theta2)[[3]]
 
   output <- data.frame(Id = input[, 2], WnvPresent = hyp)
   
@@ -135,9 +135,8 @@ nVar <- ncol(XTrain)
 
 res <- trainNN(XTrain,
                yTrain,
-               theta1 = theta1,
-               theta2 = theta2)
-theta1 <- res[[1]]; theta2 <- res[[2]]; costHist <- res[[3]];
+               lambda = 1)
+theta1 <- res[[1]]; theta2 <- res[[2]];
 
 # learningCurve <- calculateLearningCurve(XTrain,
 #                                         yTrain,
@@ -149,7 +148,7 @@ f1Hist <- calculateF1Score(XCv,
                            theta1,
                            theta2)
 
-hyp <- getCost(XTrain, yTrain, theta1, theta2)[[2]]
+hyp <- getCost(XTrain, yTrain, theta1, theta2)[[3]]
 
 # saveSubmissionFile(theta1, theta2)
 

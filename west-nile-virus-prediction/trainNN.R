@@ -15,10 +15,25 @@ getCost <- function(X, y, theta1, theta2, lambda = 0) {
   z3 <- a2 %*% t(theta2)
   hyp <- sigmoid(z3)
   
+  # Calculate cost
   J <- sum(-y * log(hyp) - (1 - y) * log(1 - hyp)) / m
+  # and regulate
   J <- J + (lambda / (2 * m)) * (sum(theta1^2) + sum(theta2^2))
   
-  return(list(J, hyp))
+  # Gradient calculation using backpropagation
+  delta3 <- hyp - y
+  delta2 <- (delta3 %*% theta2)[, 2:(nVar + 1)] * sigmoidGradient(X %*% t(theta1))
+  
+  grad2 <- (t(delta3) %*% a2) / m
+  grad1 <- (t(delta2) %*% X) / m
+  
+  # Regularise the gradient
+  grad2[, 2:ncol(grad2)] <- grad2[, 2:ncol(grad2)] + (lambda / m) * theta2[, 2:ncol(grad2)]
+  grad1[, 2:ncol(grad1)] <- grad1[, 2:ncol(grad1)] + (lambda / m) * theta1[, 2:ncol(grad1)]
+
+  grad <- c(grad1[1:length(grad1)], grad2[1:length(grad2)])
+
+  return(list(J, grad, hyp))
 }
 
 runGradientChecking <- function(X, y, theta1, theta2, epsilon = 0.001) {
@@ -53,69 +68,44 @@ runGradientChecking <- function(X, y, theta1, theta2, epsilon = 0.001) {
   return(list(theta1Grad, theta2Grad))
 }
 
-trainNN <- function(X, y, learningRate = 5, nIter = 100, lambda = 0, theta1 = NA, theta2 = NA) {
+f <- function(parameters, X, y, lambda = 0) {
+  nVar <- ncol(X)
+
+  # Reshape parameters into theta matrices
+  theta1 <- matrix(parameters[1:(nVar * (nVar + 1))],
+                   nrow = nVar,
+		   ncol = nVar + 1)
+  theta2 <- matrix(parameters[(nVar * (nVar + 1) + 1):length(parameters)],
+                   nrow = 1,
+		   ncol = nVar + 1)
+
+  # Get cost and gradient
+  ret <- getCost(X, y, theta1, theta2, lambda)
+
+  res <- ret[[1]]
+  attr(res, "gradient") <- ret[[2]]
+
+  return(res)
+}
+
+trainNN <- function(X, y, lambda = 0) {
   m <- nrow(X)
   nVar <- ncol(X)
   
-  # Add bias node
-  X <- cbind(rep(1, m),
-             X)
+  # Randomly initialise weights
+  theta1 <- runif(nVar * (nVar + 1)) - 0.5
+  theta2 <- runif(nVar + 1) - 0.5
+
+  # Minimise cost using nlm()
+  ret <- nlm(f, c(theta1, theta2), X = X, y = y, lambda = lambda)
+
+  # Reshape parameters into theta matrices
+  theta1 <- matrix(ret[[2]][1:(nVar * (nVar + 1))],
+                   nrow = nVar,
+		   ncol = nVar + 1)
+  theta2 <- matrix(ret[[2]][(nVar * (nVar + 1) + 1):length(ret[[2]])],
+                   nrow = 1,
+		   ncol = nVar + 1)
   
-  # Randomly initialise weights if not provided
-  if (is.na(theta1)) {
-    theta1 <- matrix(runif(nVar * (nVar + 1)) - 0.5,
-                     nrow = nVar,
-                     ncol = nVar + 1)
-  }
-  if (is.na(theta2)) {
-    theta2 <- matrix(runif(nVar + 1) - 0.5,
-                     nrow = 1,
-                     ncol = nVar + 1)
-  }
-  
-  # Gradient descent
-  costHist <- matrix(nrow = nIter, ncol = 2)
-  for (i in 1:nIter) {
-    # Calculate hidden layer
-    z2 <- X %*% t(theta1)
-    a2 <- cbind(rep(1, m),
-                sigmoid(z2))
-    
-    # Calculate output layer
-    z3 <- a2 %*% t(theta2)
-    hyp <- sigmoid(z3)
-    
-    # Calculate and save cost
-    J <- sum(-y * log(hyp) - (1 - y) * log(1 - hyp)) / m
-    J <- J + (lambda / (2 * m)) * (sum(theta1^2) + sum(theta2^2))
-    costHist[i, ] <- c(i, J)
-    if (i %% 10 == 0) {
-      cat("i = ", i, "\tJ = ", J, "\n")
-    }
-    
-    # Backpropagation
-    delta3 <- hyp - y
-    delta2 <- (delta3 %*% theta2)[, 2:(nVar + 1)] * sigmoidGradient(X %*% t(theta1))
-    
-    grad2 <- (t(delta3) %*% a2) / m
-    grad1 <- (t(delta2) %*% X) / m
-    
-    # Regularisation
-    grad2[, 2:ncol(grad2)] <- grad2[, 2:ncol(grad2)] + (lambda / m) * theta2[, 2:ncol(grad2)]
-    grad1[, 2:ncol(grad1)] <- grad1[, 2:ncol(grad1)] + (lambda / m) * theta1[, 2:ncol(grad1)]
-    
-    # and gradient descent
-    theta1 <- theta1 - grad1 * learningRate
-    theta2 <- theta2 - grad2 * learningRate
-  
-    # gradCheck <- runGradientChecking(X[, 2:ncol(X)],
-    #                                  y,
-    #                                  theta1,
-    #                                  theta2)
-  
-    # print(grad1); print(gradCheck[[1]]);
-    # print(grad2); print(gradCheck[[2]]);
-  }
-  
-  return(list(theta1, theta2, costHist))
+  return(list(theta1, theta2))
 }
