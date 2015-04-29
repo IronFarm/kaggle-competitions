@@ -91,19 +91,32 @@ f <- function(parameters, X, y, lambda = 0) {
 trainNN <- function(X, y, lambda = 0) {
   m <- nrow(X)
   nVar <- ncol(X)
-  
-  # Randomly initialise weights
-  theta1 <- runif(nVar * (nVar + 1)) - 0.5
-  theta2 <- runif(nVar + 1) - 0.5
 
-  # Minimise cost using nlm()
-  ret <- nlm(f, c(theta1, theta2), X = X, y = y, lambda = lambda)
+  minCost <- 1
+
+  cat("Training")
+  
+  for (i in 1:10) {
+    cat(" ", i)
+    # Randomly initialise weights
+    theta1 <- runif(nVar * (nVar + 1)) - 0.5
+    theta2 <- runif(nVar + 1) - 0.5
+
+    # Minimise cost using nlm()
+    ret <- nlm(f, c(theta1, theta2), X = X, y = y, lambda = lambda)
+
+    if (ret[[1]] < minCost) {
+      minCost <- ret[[1]]
+      parameters <- ret[[2]]
+    }
+  }
+  cat("\n")
 
   # Reshape parameters into theta matrices
-  theta1 <- matrix(ret[[2]][1:(nVar * (nVar + 1))],
+  theta1 <- matrix(parameters[1:(nVar * (nVar + 1))],
                    nrow = nVar,
                    ncol = nVar + 1)
-  theta2 <- matrix(ret[[2]][(nVar * (nVar + 1) + 1):length(ret[[2]])],
+  theta2 <- matrix(parameters[(nVar * (nVar + 1) + 1):length(parameters)],
                    nrow = 1,
                    ncol = nVar + 1)
   
