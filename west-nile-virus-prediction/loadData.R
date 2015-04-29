@@ -48,7 +48,7 @@ loadData <- function(filename = "data/train.csv") {
   input <- transform(input,
                      Date = as.Date(Date),
                      Species = as.factor(Species))
-  
+
   # Ignore satellite traps, whose trap names are ended with a letter
   # input <- subset(input, nchar(Trap) == 4)
   
@@ -90,6 +90,9 @@ loadData <- function(filename = "data/train.csv") {
   input <- merge(input,
                  trapData,
                  all.x = TRUE)
+  # then re-sort the data into its original order
+  input <- input[order(input$Date, input$Trap, input$Species), ]
+  row.names(input) <- NULL
   
   # Perform mean normalisation where required
   input$Latitude <- meanNormalise(input$Latitude)

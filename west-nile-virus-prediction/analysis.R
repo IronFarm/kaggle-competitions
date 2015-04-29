@@ -16,7 +16,6 @@ splitSample <- function(X, y, date) {
 
 calculateLearningCurve <- function(XTrain, yTrain, XCv, yCv) {
   # Make learning curves, using 1000-8000 training examples
-  # Data is already randomised
   trainingExamples <- seq(1000, 8000, 500)
 
   learningCurve <- data.frame(TrainingExamples = numeric(length(trainingExamples)),
@@ -24,13 +23,17 @@ calculateLearningCurve <- function(XTrain, yTrain, XCv, yCv) {
                               costTrain = numeric(length(trainingExamples)))
 
   for (i in 1:length(trainingExamples)) {
-    res <- trainNN(XTrain[1:trainingExamples[i], ],
-                   yTrain[1:trainingExamples[i]],
+    # Choose random training examples
+    idxRandom <- sample(nrow(XTrain), trainingExamples[i])
+
+    # Use them to train a NN
+    res <- trainNN(XTrain[idxRandom, ],
+                   yTrain[idxRandom],
                    lambda = 0.0)
     theta1 <- res[[1]]; theta2 <- res[[2]];
     
-    costTrain <- getCost(XTrain[1:trainingExamples[i], ],
-                         yTrain[1:trainingExamples[i]],
+    costTrain <- getCost(XTrain[idxRandom, ],
+                         yTrain[idxRandom],
                          theta1,
                          theta2)[[1]]
     costCv <- getCost(XCv,
