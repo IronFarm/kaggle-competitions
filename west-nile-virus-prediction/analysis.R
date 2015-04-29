@@ -90,13 +90,14 @@ saveSubmissionFile <- function(theta1, theta2) {
              input$SevenDayMeanTavg,
              input$SevenDaySumPrecipTotal,
              #input$Block,
-             input$Species)
+             input$Species,
+             input$SprayDensity)
 
   y <- rep(0, nrow(X))
   
   hyp <- getCost(X, y, theta1, theta2)[[3]]
 
-  output <- data.frame(Id = input[, 2], WnvPresent = hyp)
+  output <- data.frame(Id = input$Id, WnvPresent = hyp)
   
   output <- merge(data.frame(Id = 1:116293), output, all.x = TRUE)
   output[is.na(output[, 2]), 2] <- 0
@@ -105,7 +106,6 @@ saveSubmissionFile <- function(theta1, theta2) {
   
   return(output)
 }
-
 
 input <- loadData("data/train.csv")
 
@@ -121,7 +121,8 @@ X <- cbind(input$DayOfYear,
            input$SevenDayMeanTavg,
            input$SevenDaySumPrecipTotal,
            #input$Block,
-           input$Species)
+           input$Species,
+           input$SprayDensity)
 
 # y contains 0 for no WNV and 1 for WNV present
 y <- matrix(input$WnvPresent)

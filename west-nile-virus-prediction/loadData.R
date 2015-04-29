@@ -1,3 +1,15 @@
+haversine <- function(theta) {
+  return((sin(theta / 2))^2)
+}
+
+getSprayDensity <- function(latitude, longitude, sprayData) {
+  res <- 2 * 6371 * asin(sqrt(haversine(latitude - sprayData$Latitude) + cos(latitude) * cos(sprayData$Latitude) * haversine(longitude - sprayData$Longitude)))
+
+  res <- sum(exp(-res / 2))
+
+  return(res)
+}
+
 meanNormalise <- function(data) {
 
   data <- (data - mean(data))/sd(data)
@@ -29,7 +41,7 @@ slidingSum <- function(data, days = 7) {
   return(output)
 }
 
-loadData <- function(filename) {
+loadData <- function(filename = "data/train.csv") {
   # Read in CSV
   input <- read.csv(filename,
                     stringsAsFactors = FALSE)
@@ -52,6 +64,32 @@ loadData <- function(filename) {
                  weatherData,
                  all.x = TRUE)
   #input <- na.omit(input)
+
+  # Load spray data
+  sprayData <- loadSprayData()
+
+  # Convert latitudes and longitudes to radians
+  input <- transform(input,
+                     Latitude = Latitude * pi / 180,
+                     Longitude = Longitude * pi / 180)
+  sprayData <- transform(sprayData,
+                         Latitude = Latitude * pi / 180,
+                         Longitude = Longitude * pi / 180)
+
+  # Copy trap data
+  trapData <- unique(input[, c("Latitude", "Longitude")])
+  trapData$SprayDensity <- rep(0, nrow(trapData))
+
+  # Calculate density of spraying for each trap
+  for (i in 1:nrow(trapData)) {
+    trapData$SprayDensity[i] <- getSprayDensity(trapData$Latitude[i], trapData$Longitude[i], sprayData)
+  }
+  trapData$SprayDensity <- trapData$SprayDensity / max(trapData$SprayDensity)
+
+  # and merge it into the input data
+  input <- merge(input,
+                 trapData,
+                 all.x = TRUE)
   
   # Perform mean normalisation where required
   input$Latitude <- meanNormalise(input$Latitude)
@@ -89,3 +127,12 @@ loadWeatherData <- function() {
   # Reorder and save temp. and precip. data
   weatherData <- weatherData[, c(2, 1, 4, 3, 5, 17, 23, 24)]
 }
+
+loadSprayData <- function() {
+  sprayData <- read.csv("data/spray.csv",
+                        stringsAsFactors = FALSE)
+
+  sprayData <- transform(sprayData,
+                         Date = as.Date(Date))
+}
+

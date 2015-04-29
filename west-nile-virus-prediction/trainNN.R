@@ -74,10 +74,10 @@ f <- function(parameters, X, y, lambda = 0) {
   # Reshape parameters into theta matrices
   theta1 <- matrix(parameters[1:(nVar * (nVar + 1))],
                    nrow = nVar,
-		   ncol = nVar + 1)
+                   ncol = nVar + 1)
   theta2 <- matrix(parameters[(nVar * (nVar + 1) + 1):length(parameters)],
                    nrow = 1,
-		   ncol = nVar + 1)
+                   ncol = nVar + 1)
 
   # Get cost and gradient
   ret <- getCost(X, y, theta1, theta2, lambda)
@@ -102,10 +102,10 @@ trainNN <- function(X, y, lambda = 0) {
   # Reshape parameters into theta matrices
   theta1 <- matrix(ret[[2]][1:(nVar * (nVar + 1))],
                    nrow = nVar,
-		   ncol = nVar + 1)
+                   ncol = nVar + 1)
   theta2 <- matrix(ret[[2]][(nVar * (nVar + 1) + 1):length(ret[[2]])],
                    nrow = 1,
-		   ncol = nVar + 1)
+                   ncol = nVar + 1)
   
   return(list(theta1, theta2))
 }
