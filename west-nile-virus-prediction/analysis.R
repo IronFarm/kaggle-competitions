@@ -2,17 +2,11 @@ source("loadData.R")
 source("trainNN.R")
 source("utility.R")
 
-splitSample <- function(X, y, split = 0.8) {
-  mTot <- nrow(X)
-  mSplit <- round(split * mTot)
+splitSample <- function(X, y, date) {
+  idxCv <- (date > as.Date("2011-01-01")) & (date < as.Date("2011-12-31"))
   
-  idxShuffled <- sample(mTot)
-  
-  idxTrain <- idxShuffled[1:mSplit]
-  idxCv <- idxShuffled[(mSplit + 1):mTot]
-  
-  XTrain <- X[idxTrain, ]
-  yTrain <- y[idxTrain, ]
+  XTrain <- X[!idxCv, ]
+  yTrain <- y[!idxCv, ]
   
   XCv <- X[idxCv, ]
   yCv <- y[idxCv, ]
@@ -143,7 +137,7 @@ X <- cbind(input$DayOfYear,
 # y contains 0 for no WNV and 1 for WNV present
 y <- matrix(input$WnvPresent)
 
-res <- splitSample(X, y)
+res <- splitSample(X, y, input$Date)
 XTrain <- res[[1]]; yTrain <- res[[2]]; XCv <- res[[3]]; yCv <- res[[4]];
 
 mTrain <- nrow(XTrain)
