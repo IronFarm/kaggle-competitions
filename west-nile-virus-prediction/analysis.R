@@ -47,33 +47,45 @@ calculateLearningCurve <- function(XTrain, yTrain, XCv, yCv) {
   return(learningCurve)
 }
 
-calculateF1Score <- function(XCv, yCv, theta1, theta2, nThresholds = 100) {
+calculatePerformanceMetrics <- function(X, y, theta1, theta2, nThresholds = 100) {
+  m <- nrow(X)
+
+  hyp <- getCost(X,
+                 y,
+                 theta1,
+                 theta2)[[3]]
+
   # Find threshold which maximises F1 score
-  f1Hist <- matrix(nrow = nThresholds, ncol = 2)
-  for (i in 1:nThresholds) {
-    threshold <- i / nThresholds
+  perfData <- data.frame(threshold = seq(0, 1, 1 / nThresholds),
+                         f1 = numeric(nThresholds + 1),
+                         TPR = numeric(nThresholds + 1),
+                         FPR = numeric(nThresholds + 1))
+
+  for (i in 1:nrow(perfData)) {
+    decision <- hyp > perfData$threshold[i]
     
-    hyp <- getCost(XCv,
-                   yCv,
-                   theta1,
-                   theta2)[[3]]
-    decision <- hyp > threshold
-    
-    tp <- sum(decision == 1 & yCv == 1)
-    fp <- sum(decision == 1 & yCv == 0)
-    fn <- sum(decision == 0 & yCv == 1)
-    tn <- sum(decision == 0 & yCv == 0)
+    tp <- sum(decision == 1 & y == 1)
+    fp <- sum(decision == 1 & y == 0)
+    fn <- sum(decision == 0 & y == 1)
+    tn <- sum(decision == 0 & y == 0)
     
     precision <- tp / (tp + fp)
     recall <- tp / (tp + fn)
     
-    f1 <- 2 * precision * recall / (precision + recall)
-    f1Hist[i, ] <- c(i, f1)
+    perfData$TPR[i] <- recall
+    perfData$FPR[i] <- fp / (fp + tn)
+    perfData$f1[i] <- 2 * precision * recall / (precision + recall)
+  }
+
+  AUROC <- 0
+  for (i in 1:nThresholds) {
+    AUROC <- AUROC + ((perfData$TPR[i] + perfData$TPR[i + 1]) / 2) * (perfData$FPR[i] - perfData$FPR[i + 1])
   }
   
-  cat("Max. F1 score: ", max(f1Hist[, 2], na.rm = TRUE))
+  cat("Max. F1 score: ", max(perfData$f1, na.rm = TRUE), "\n")
+  cat("AUROC score: ", AUROC, "\n")
   
-  return(f1Hist)
+  return(perfData)
 }
 
 saveSubmissionFile <- function(theta1, theta2) {
@@ -144,10 +156,10 @@ theta1 <- res[[1]]; theta2 <- res[[2]];
 #                                         XCv,
 #                                         yCv)
 
-f1Hist <- calculateF1Score(XCv,
-                           yCv,
-                           theta1,
-                           theta2)
+perfData <- calculatePerformanceMetrics(XCv,
+                                        yCv,
+                                        theta1,
+                                        theta2)
 
 hyp <- getCost(XTrain, yTrain, theta1, theta2)[[3]]
 
