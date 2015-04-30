@@ -68,6 +68,8 @@ runGradientChecking <- function(X, y, theta1, theta2, epsilon = 0.001) {
   return(list(theta1Grad, theta2Grad))
 }
 
+# Returns the cost, taking the unrolled theta parameters as input
+# Required for use in optim()
 f <- function(parameters, X, y, lambda = 0) {
   nVar <- ncol(X)
 
@@ -88,29 +90,33 @@ f <- function(parameters, X, y, lambda = 0) {
   return(res)
 }
 
+# Uses f() and the unrolled theta parameters to obtain the gradient
+# Required for use in optim()
+g <- function(parameters, X, y, lambda = 0) {
+  ret <- f(parameters, X, y, lambda)
+  res <- attr(ret, "gradient")
+
+  return(res)
+}
+
 trainNN <- function(X, y, lambda = 0) {
   m <- nrow(X)
   nVar <- ncol(X)
 
-  minCost <- 1
+  # Randomly initialise weights
+  theta1 <- runif(nVar * (nVar + 1)) - 0.5
+  theta2 <- runif(nVar + 1) - 0.5
 
-  cat("Training")
-  
-  for (i in 1:10) {
-    cat(" ", i)
-    # Randomly initialise weights
-    theta1 <- runif(nVar * (nVar + 1)) - 0.5
-    theta2 <- runif(nVar + 1) - 0.5
-
-    # Minimise cost using nlm()
-    ret <- nlm(f, c(theta1, theta2), X = X, y = y, lambda = lambda)
-
-    if (ret[[1]] < minCost) {
-      minCost <- ret[[1]]
-      parameters <- ret[[2]]
-    }
-  }
-  cat("\n")
+  # Minimise cost using optim() with method BFGS
+  res <- optim(c(theta1, theta2),
+               f,
+               g,
+               method = "BFGS",
+               control = list(maxit = 10000),
+               X = X,
+               y = y,
+               lambda = lambda)
+  parameters <- res[[1]]
 
   # Reshape parameters into theta matrices
   theta1 <- matrix(parameters[1:(nVar * (nVar + 1))],
