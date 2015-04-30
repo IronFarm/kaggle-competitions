@@ -85,8 +85,46 @@ calculatePerformanceMetrics <- function(X, y, theta1, theta2, nThresholds = 100)
   
   cat("Max. F1 score: ", max(perfData$f1, na.rm = TRUE), "\n")
   cat("AUROC score: ", AUROC, "\n")
+
+  attr(perfData, "auroc") <- AUROC
   
   return(perfData)
+}
+
+calculateValidationCurve <- function(XTrain, yTrain, XCv, yCv) {
+  lambda <- c(0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30)
+  regHist <- data.frame(lambda = lambda,
+                        costTrain = numeric(length(lambda)),
+                        costCv = numeric(length(lambda)),
+                        auroc = numeric(length(lambda)))
+  
+  # Iterate over lambda values
+  for (i in 1:nrow(regHist)) {
+    # Train NN with current lambda value
+    res <- trainNN(XTrain,
+                   yTrain,
+                   lambda = regHist$lambda[i])
+    theta1 <- res[[1]]; theta2 <- res[[2]];
+    
+    # Use perfData() to calculate AUROC
+    perfData <- calculatePerformanceMetrics(XCv,
+                                            yCv,
+                                            theta1,
+                                            theta2)
+    
+    # Calculate and save costs and AUROC
+    regHist$costTrain[i] <- getCost(XTrain,
+                                    yTrain,
+                                    theta1,
+                                    theta2)[[1]]
+    regHist$costCv[i] <- getCost(XCv,
+                                 yCv,
+                                 theta1,
+                                 theta2)[[1]]
+    regHist$auroc[i] <- attr(perfData, "auroc")
+  }
+
+  return(regHist)
 }
 
 saveSubmissionFile <- function(theta1, theta2) {
@@ -149,7 +187,7 @@ nVar <- ncol(XTrain)
 
 res <- trainNN(XTrain,
                yTrain,
-               lambda = 0.0)
+               lambda = 10)
 theta1 <- res[[1]]; theta2 <- res[[2]];
 
 # learningCurve <- calculateLearningCurve(XTrain,
@@ -162,7 +200,10 @@ perfData <- calculatePerformanceMetrics(XCv,
                                         theta1,
                                         theta2)
 
-hyp <- getCost(XTrain, yTrain, theta1, theta2)[[3]]
+res <- getCost(XTrain, yTrain, theta1, theta2)
+cost <- res[[1]]; grad <- res[[2]]; hyp <- res[[3]];
+
+cat("J_train: ", cost, "\n")
 
 # saveSubmissionFile(theta1, theta2)
 
