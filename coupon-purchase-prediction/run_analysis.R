@@ -17,8 +17,8 @@ purchase_history_data <- read.csv('input/coupon_detail_train.csv',
 purchase_history_data$I_DATE <- as.POSIXct(purchase_history_data$I_DATE, tz = 'UTC')
 
 # Merge purchases for each user
-user_purchase_history <- aggregate(COUPON_ID_hash ~ USER_ID_hash, data = purchase_history_data, FUN = function(x) paste(x, collapse = ','))
-names(user_purchase_history) <- c('USER_ID_hash', 'PURCHASE_HISTORY_COUPON_ID_hash')
+#user_purchase_history <- aggregate(COUPON_ID_hash ~ USER_ID_hash, data = purchase_history_data, FUN = function(x) paste(x, collapse = ','))
+#names(user_purchase_history) <- c('USER_ID_hash', 'PURCHASE_HISTORY_COUPON_ID_hash')
 
 # Load user data
 user_data <- read.csv('input/user_list.csv',
@@ -41,12 +41,19 @@ user_data$IS_WITHDRAWN <- !is.na(user_data$WITHDRAW_DATE)
 user_data <- merge(user_data, prefecture_data, all.x = TRUE)
 
 # Add data on each user's purchase history
-user_data <- merge(user_data, user_purchase_history, all.x = TRUE)
-user_data$COUPONS_PURCHASED <- round(nchar(user_data$PURCHASE_HISTORY_COUPON_ID_hash) / 33)
+user_purchase_data <- merge(user_data, purchase_history_data)
+#user_data$COUPONS_PURCHASED <- round(nchar(user_data$PURCHASE_HISTORY_COUPON_ID_hash) / 33)
 
 # Print a summary
-print(head(user_data))
-str(user_data)
+#print(head(user_purchase_data))
+#str(user_purchase_data)
+
+# Find the most commonly purchased coupon for each prefecture
+prefecture_purchase_data <- aggregate(COUPON_ID_hash ~ PREF_NAME, user_purchase_data, FUN = function(x) names(which.max(table(x))))
+
+# Print it and summarise it in a table
+print(prefecture_purchase_data)
+print(table(prefecture_purchase_data$COUPON_ID_hash))
 
 # coupon_classes <- c('character', 'character', 'integer', 'integer', 'integer',
 #                     'POSIXct', 'POSIXct', 'integer', 'POSIXct', 'POSIXct',
