@@ -22,6 +22,7 @@ saveWeightVector <- function(weight_vector) {
 
 getHyp <- function(weights, user_prefs, coupons) {
     weight_matrix <- getWeightMatrix(weights)
+
     hyp <- as.matrix(user_prefs[,2:ncol(user_prefs)]) %*% weight_matrix %*% t(as.matrix(coupons[,2:ncol(coupons)]))
     hyp <- sigmoid(hyp)
     
@@ -30,25 +31,16 @@ getHyp <- function(weights, user_prefs, coupons) {
 
 getCost <- function(weights, y, user_prefs, coupons) {
     hyp <- getHyp(weights, user_prefs, coupons)
-    weight_matrix <- getWeightMatrix(weights)
-    
-    #return (sum(0.5 * (hyp - y)**2) / length(y))
     
     return ((-1 / length(y)) * (sum(y * log(hyp) + (1 - y) * log(1 - hyp))))
 }
 
 getGrad <- function(weights, y, user_prefs, coupons) {
-    grad <- numeric(length(weights))
-    
-    for (i in 1:length(weights)) {
-        grad[i] <- sum(as.matrix(user_prefs[, i + 1] %*% (weight_matrix[i, i] * t(as.matrix(coupons[, i + 1])))))
-    }
+    hyp <- getHyp(weights, user_prefs, coupons)
+
+    grad <- colSums((t(hyp - y) %*% as.matrix(user_prefs[, -1])) * as.matrix(coupons[, -1])) / length(y)
     
     return (grad)
-    #hyp <- getHyp(weights, user_prefs, coupons)
-    
-    #return (-1)
-    #return ((1 / length(y)) * (sum(hyp - y)))
 }
 
 saveSubmission <- function(weights, user_prefs, coupons, full_user_list) {
@@ -69,6 +61,7 @@ saveSubmission <- function(weights, user_prefs, coupons, full_user_list) {
 train_mode <- FALSE
 train_entries <- 1000
 weight_vector <- loadWeightVector()
+set.seed(99)
 
 #read in all the input data
 coupon_detail_train <- read.csv("input/coupon_detail_train.csv")
@@ -77,7 +70,7 @@ coupon_list_test <- read.csv("input/coupon_list_test.csv")
 user_list <- read.csv("input/user_list.csv")
 
 if (train_mode) {
-    user_list <- user_list[1:train_entries, ]
+    user_list <- user_list[sample(nrow(user_list), train_entries), ]
     coupon_detail_train <- coupon_detail_train[coupon_detail_train$USER_ID_hash %in% user_list$USER_ID_hash, ]
     coupon_list_train <- coupon_list_train[coupon_list_train$COUPON_ID_hash %in% coupon_detail_train$COUPON_ID_hash, ]
 }
@@ -115,14 +108,6 @@ testing_coupons <- training_coupons[training_coupons$USER_ID_hash=="dummyuser",]
 testing_coupons <- testing_coupons[,-2]
 training_coupons <- training_coupons[training_coupons$USER_ID_hash!="dummyuser",]
 
-if (train_mode) {
-    y <- matrix(nrow = nrow(user_list), ncol = nrow(coupon_list_train))
-    for (i in 1:nrow(coupon_list_train)) {
-        coupon <- as.character(sort(coupon_list_train$COUPON_ID_hash)[i])
-        y[, i] <- as.numeric(sort(user_list$USER_ID_hash) %in% training_coupons[training_coupons$COUPON_ID_hash == coupon, 'USER_ID_hash'])
-    }
-}
-
 #data frame of user characteristics
 user_ideal_coupon <- aggregate(.~USER_ID_hash, data=training_coupons[,-1],FUN=mean)
 user_ideal_coupon <- merge(data.frame(USER_ID_hash = sort(user_list$USER_ID_hash)), user_ideal_coupon, all.x = TRUE)
@@ -130,15 +115,63 @@ user_ideal_coupon[is.na(user_ideal_coupon)] <- 0
 user_ideal_coupon$DISCOUNT_PRICE <- 1
 user_ideal_coupon$PRICE_RATE <- 1
 
-if (train_mode) training_coupons <- aggregate(.~COUPON_ID_hash, data=training_coupons[,-2],FUN=mean)
+if (train_mode) {
+    i <- match(training_coupons$USER_ID_hash, user_ideal_coupon$USER_ID_hash)
+    j <- match(training_coupons$COUPON_ID_hash, unique(training_coupons$COUPON_ID_hash))
+    # y is mostly zeros so use sparseMatrix
+    y <- sparseMatrix(i, j, dims = c(nrow(user_ideal_coupon), length(unique(training_coupons$COUPON_ID_hash))))
+}
+
 
 #calculation of cosine similarities of users and coupons
 #test_scores <- getHyp(weight_vector, user_ideal_coupon, testing_coupons)
 #train_scores <- getHyp(weight_vector, user_ideal_coupon, training_coupons)
 
-saveSubmission(weight_vector, user_ideal_coupon, testing_coupons, user_list)
-
 if (train_mode) {
-    a <- optim(weight_vector, function(x) getCost(x, y, user_ideal_coupon, training_coupons))
-    print(a)
+    # This is needed for cost and gradient calculations
+    unique_coupons <- training_coupons[match(unique(training_coupons$COUPON_ID_hash), training_coupons$COUPON_ID_hash), -2]
+
+    ## Random initialisation
+    #print('Attempting random initialisation')
+    #initial_cost <- getCost(weight_vector, y, user_ideal_coupon, unique_coupons)
+    #print(c('Initial cost', initial_cost))
+    #for (i in 1:100) {
+    #    print(i)
+    #    random_weights <- runif(length(weight_vector), -1, 1)
+    #    cost <- getCost(random_weights, y, user_ideal_coupon, unique_coupons)
+
+    #    if (cost < initial_cost) {
+    #        initial_cost <- cost
+    #        print(c('Updated cost', cost))
+    #        weight_vector <- random_weights
+    #    }
+    #}
+
+    #print('Random initialisation complete')
+    #print(c('Final cost', initial_cost))
+
+    ## Gradient descent
+    #print('Gradient descent')
+    #alpha <- 1
+    #max_iter <- 10
+    #for (i in 1:max_iter) {
+    #    weight_vector <- weight_vector - alpha * getGrad(weight_vector, y, user_ideal_coupon, unique_coupons)
+    #    print(getCost(weight_vector, y, user_ideal_coupon, unique_coupons))
+    #}
+
+    ## Optimisation routines
+    #a <- optim(weight_vector,
+    #           getCost,
+    #           getGrad,
+    #           y,
+    #           user_ideal_coupon,
+    #           unique_coupons,
+    #           method = 'BFGS',
+    #           control = list(trace = 1))
+    #a <- nlm(getCost, weight_vector, y, user_ideal_coupon, unique_coupons, print.level = 2)
+    #a <- nlminb(weight_vector, getCost, getGrad, NULL, y, user_ideal_coupon, unique_coupons, control = list('trace' = 5))
+    #print(a)
 }
+
+if (!train_mode) saveSubmission(weight_vector, user_ideal_coupon, testing_coupons, user_list)
+
